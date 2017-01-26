@@ -1,4 +1,4 @@
-package scraper;
+package scraper.printer;
 
 import scraper.account.BankAccount;
 

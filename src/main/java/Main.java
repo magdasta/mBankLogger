@@ -1,4 +1,4 @@
-import scraper.AccountsPrinter;
+import scraper.printer.AccountsPrinter;
 import scraper.account.BankAccount;
 import scraper.BankScraper;
 import scraper.MBankScraper;
