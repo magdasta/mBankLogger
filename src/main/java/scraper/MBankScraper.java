@@ -6,7 +6,6 @@ import scraper.account.BankAccount;
 import scraper.account.MBankAccount;
 import scraper.requester.HttpRequester;
 
-import java.io.Console;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,36 +16,26 @@ public class MBankScraper implements BankScraper {
     private String password;
     private String mBank2Cookie;
     private String mBank_tabIdCookie;
-    private String MBANK2_COOKIE_NAME = "mBank2";
-    private String MBANK_TABID_COOKIE_NAME = "mBank_tabId";
+    private static String MBANK2_COOKIE_NAME = "mBank2";
+    private static String MBANK_TABID_COOKIE_NAME = "mBank_tabId";
     private String requestVerificationToken;
 
+    public MBankScraper(String login, String password) {
+        this.login = login;
+        this.password = password;
+    }
 
     @Override
     public List<BankAccount> getAccounts() throws IOException {
-        askForCredentials();
-        prepareCookies();
-        prepareRequestVerificationToken();
+        logIn();
         return prepareAccountsList();
     }
 
-    private void askForCredentials() {
-        Console console = System.console();
-        try {
-            console.printf("Login: ");
-            login = console.readLine();
-            password = new String(console.readPassword("Password: "));
-        }
-        catch(NullPointerException nullPointerException ) {
-            System.out.println("Couldn't get Console instance - unable to ask for credentials. " +
-                    "Please try running this application from shell or edit MBankScraper's " +
-                    "'askForCredentials' method to provide login and password other way.");
-            System.exit(0);
-        }
-        // if you have to, hardcode login data here and delete the 'exit' statement above
-        //login = "login_goes_here";
-        //password = "password_goes_here";
+    private void logIn() throws IOException {
+        prepareCookies();
+        prepareRequestVerificationToken();
     }
+
 
     private void prepareCookies() throws IOException {
         setCookies(prepareHttpRequestForDiscoveringCookies());
