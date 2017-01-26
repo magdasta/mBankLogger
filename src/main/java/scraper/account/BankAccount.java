@@ -1,29 +1,20 @@
-package mBankLogger;
+package scraper.account;
 
-import org.json.JSONObject;
-
-class Account implements Comparable{
-    private String name;
-    private String number;
-    private String balance;
-
-    Account(JSONObject jsonAccountData) {
-        name = jsonAccountData.getString("ProductName");
-        number = jsonAccountData.getString("AccountNumber");
-        balance = jsonAccountData.getString("Balance");
-    }
+public class BankAccount implements Comparable{
+    protected String number;
+    protected String balance;
 
     @Override
     public String toString() {
-        return name + " " + number + ":\t" + balance;
+        return number + ":\t" + balance;
     }
 
     @Override
     public int compareTo(Object other) {
         if (other == null)
             throw new NullPointerException();
-        if (other instanceof Account)
-            return compare(this.balance, ((Account) other).balance);
+        if (other instanceof BankAccount)
+            return compare(this.balance, ((BankAccount) other).balance);
         else
             throw new ClassCastException();
     }
@@ -45,4 +36,5 @@ class Account implements Comparable{
                 return 1;
         return 0;
     }
+
 }

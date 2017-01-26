@@ -1,4 +1,4 @@
-package mBankLogger.mBankHttp.http;
+package scraper.requester;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -9,10 +9,11 @@ import java.net.URL;
 import java.util.List;
 
 public class HttpRequester {
+
     private HttpURLConnection connection;
     private String host;
 
-    protected HttpRequester(String host) {
+    public HttpRequester(String host) {
         this.host = host;
     }
 
@@ -21,22 +22,22 @@ public class HttpRequester {
         return connection.getHeaderFields().get(headerName);
     }
 
-    protected void setHttpRequestHeader(String headerName, String headerValue) {
+    public void setHttpRequestHeader(String headerName, String headerValue) {
         connection.setRequestProperty(headerName, headerValue);
     }
 
-    protected void setRequestCookie(String cookie) {
+    public void setRequestCookie(String cookie) {
         connection.setRequestProperty("Cookie", cookie);
     }
 
-    protected void setupBasicHttpConnection(String requestMethod, String urlPath) throws IOException {
+    public void setupBasicHttpConnection(String requestMethod, String urlPath) throws IOException {
         URL url = new URL(host + urlPath);
         connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod(requestMethod);
     }
 
 
-    protected void sendRequestBody(String requestBody) throws IOException {
+    public void sendRequestBody(String requestBody) throws IOException {
         connection.setRequestProperty("Content-Length", Integer.toString(requestBody.length()));
         connection.setDoOutput(true);
         DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
