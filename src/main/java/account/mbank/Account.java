@@ -1,11 +1,12 @@
-package account;
+package account.mbank;
 
+import account.BankAccount;
 import org.json.JSONObject;
 
-public class MBankAccount extends BankAccount {
+public class Account extends BankAccount {
     private String name;
 
-    public MBankAccount(JSONObject jsonAccountData) {
+    public Account(JSONObject jsonAccountData) {
         name = jsonAccountData.getString("ProductName");
         number = jsonAccountData.getString("AccountNumber");
         balance = jsonAccountData.getString("Balance");

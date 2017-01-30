@@ -1,8 +1,8 @@
 import org.xml.sax.SAXException;
 import ui.AccountsPrinter;
 import account.BankAccount;
-import scraper.generic.BankScraper;
-import scraper.MBankScraper;
+import scraper.BankScraper;
+import scraper.mbank.MBankScraper;
 import ui.CredentialsReader;
 
 import java.io.IOException;

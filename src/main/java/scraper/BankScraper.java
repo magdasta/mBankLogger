@@ -1,4 +1,4 @@
-package scraper.generic;
+package scraper;
 
 import org.xml.sax.SAXException;
 import account.BankAccount;

@@ -1,12 +1,12 @@
-package scraper;
+package scraper.mbank;
 
 import com.meterware.httpunit.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.xml.sax.SAXException;
 import account.BankAccount;
-import account.MBankAccount;
-import scraper.generic.BankScraper;
+import account.mbank.Account;
+import scraper.BankScraper;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -76,7 +76,7 @@ public class MBankScraper implements BankScraper {
         JSONArray array = jsonObject.getJSONArray("accountDetailsList");
         List<BankAccount> accounts = new ArrayList<>();
         for (int i = 0; i < array.length(); ++i)
-            accounts.add(new MBankAccount(array.getJSONObject(i)));
+            accounts.add(new Account(array.getJSONObject(i)));
         return accounts;
     }
 }

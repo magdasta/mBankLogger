@@ -1,8 +1,8 @@
 package account;
 
 public class BankAccount implements Comparable{
-    String number;
-    String balance;
+    protected String number;
+    protected String balance;
 
     @Override
     public String toString() {
