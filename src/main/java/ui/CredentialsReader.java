@@ -1,4 +1,4 @@
-package scraper.ui;
+package ui;
 
 import java.io.Console;
 

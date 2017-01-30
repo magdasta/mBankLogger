@@ -1,4 +1,4 @@
-package scraper.account;
+package account;
 
 import org.json.JSONObject;
 

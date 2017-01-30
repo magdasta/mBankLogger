@@ -1,8 +1,8 @@
-package scraper.account;
+package account;
 
 public class BankAccount implements Comparable{
-    protected String number;
-    protected String balance;
+    String number;
+    String balance;
 
     @Override
     public String toString() {

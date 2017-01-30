@@ -1,97 +1,74 @@
 package scraper;
 
+import com.meterware.httpunit.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import scraper.account.BankAccount;
-import scraper.account.MBankAccount;
-import scraper.requester.HttpRequester;
+import org.xml.sax.SAXException;
+import account.BankAccount;
+import account.MBankAccount;
+import scraper.generic.BankScraper;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MBankScraper implements BankScraper {
-    private static String MBANK_URL = "https://online.mbank.pl";
+    private static String MBANK_URL = "https://online.mbank.pl/";
     private String login;
     private String password;
-    private String mBank2Cookie;
-    private String mBank_tabIdCookie;
-    private static String MBANK2_COOKIE_NAME = "mBank2";
-    private static String MBANK_TABID_COOKIE_NAME = "mBank_tabId";
     private String requestVerificationToken;
+    private WebConversation webConversation;
 
     public MBankScraper(String login, String password) {
         this.login = login;
         this.password = password;
+        setupWebConversation();
     }
 
     @Override
-    public List<BankAccount> getAccounts() throws IOException {
-        logIn();
-        return prepareAccountsList();
+    public List<BankAccount> getAccounts() throws IOException, SAXException {
+        sendCredentials();
+        discoverRequestVerificationToken();
+        String accountsJson = getAccountsJson();
+        return getAccountsFromJson(accountsJson);
     }
 
-    private void logIn() throws IOException {
-        prepareCookies();
-        prepareRequestVerificationToken();
+    private void setupWebConversation() {
+        webConversation = new WebConversation();
+        HttpUnitOptions.setDefaultCharacterSet("UTF-8");
+        HttpUnitOptions.setScriptingEnabled(true);
     }
 
-
-    private void prepareCookies() throws IOException {
-        setCookies(prepareHttpRequestForDiscoveringCookies());
+    private void sendCredentials() throws IOException, SAXException {
+        WebRequest request = new PostMethodWebRequest(MBANK_URL +"pl/LoginMain/Account/JsonLogin",
+                new ByteArrayInputStream(prepareLoginData().getBytes()),
+                "application/json;charset=UTF-8");
+        request.setHeaderField("Content-Type", "application/json;charset=UTF-8");
+        webConversation.sendRequest(request);
     }
 
-    private HttpRequester prepareHttpRequestForDiscoveringCookies() throws IOException {
-        HttpRequester httpRequester = new HttpRequester(MBANK_URL);
-        httpRequester.setupBasicHttpConnection("POST", "/pl/LoginMain/Account/JsonLogin");
-        httpRequester.setHttpRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        httpRequester.sendRequestBody(prepareLoginData());
-        return httpRequester;
+    private void discoverRequestVerificationToken() throws SAXException, IOException {
+        WebRequest requestForToken = new GetMethodWebRequest(MBANK_URL + "pl");
+        WebResponse response = webConversation.sendRequest(requestForToken);
+        requestVerificationToken = response.getElementsWithName("__AjaxRequestVerificationToken")[0].getAttribute("content");
     }
 
-    private String prepareLoginData() {
-        String jsonPrefix = "{\"UserName\":\"";
-        String jsonInfix = "\",\"Password\":\"";
-        String jsonSuffix = "\",\"Seed\":\"IuPy73fmyUmjeMYhanpFEw==\"," +
-                "\"Scenario\":\"Default\"," +
-                "\"UWAdditionalParams\":{\"InOut\":null," +
-                "\"ReturnAddress\":null," +
-                "\"Source\":null}," +
-                "\"Lang\":\"\"}";
-        return jsonPrefix + login + jsonInfix + password + jsonSuffix;
+    private String getAccountsJson() throws IOException, SAXException {
+        WebRequest request = new PostMethodWebRequest(MBANK_URL + "pl/MyDesktop/Desktop/GetAccountsList");
+        request.setHeaderField("X-Request-Verification-Token", requestVerificationToken);
+        request.setHeaderField("X-Requested-With", "XMLHttpRequest");
+        request.setHeaderField("X-Tab-Id", webConversation.getCookieValue("mBank_tabId"));
+        WebResponse response = webConversation.sendRequest(request);
+        return response.getText();
     }
 
-    private void setCookies(HttpRequester httpRequester) {
-        List<String> headersSettingCookies = httpRequester.getHeaderFieldsByName("Set-Cookie");
-
-        mBank2Cookie = findCookieInHeaders(headersSettingCookies, MBANK2_COOKIE_NAME);
-        mBank_tabIdCookie = findCookieInHeaders(headersSettingCookies, MBANK_TABID_COOKIE_NAME);
-    }
-
-    private String findCookieInHeaders(List<String> httpHeaders, String cookieName) {
-        for (String header : httpHeaders)
-            if (header.contains(cookieName))
-                return extractCookie(header, cookieName);
-        return "";
-    }
-    // cookies start with their names and are separated with semicolon
-    private String extractCookie(String httpHeader, String cookieName) {
-        int beginIndex = httpHeader.indexOf(cookieName);
-        String headerWithoutPrefix = httpHeader.substring(beginIndex);
-        return headerWithoutPrefix.split(";")[0];
-    }
-    private List<BankAccount> prepareAccountsList() throws IOException {
-        HttpRequester httpRequester = prepareRequesterForGettingAccountsData();
-        String json = httpRequester.receiveHttpResponse();
-        return getAccountsFromJson(json);
-    }
-
-    private HttpRequester prepareRequesterForGettingAccountsData() throws IOException {
-        HttpRequester httpRequester = prepareHttpRequesterForGettingAccountsData();
-        String requestBody = "{}";
-        httpRequester.sendRequestBody(requestBody);
-        return httpRequester;
-
+    private  String prepareLoginData() {
+        String jsonPrefix = "{_UserName_:_";
+        String jsonInfix = "_,_Password_:_";
+        String jsonSuffix = "_,_Seed_:_IuPy73fmyUmjeMYhanpFEw==_,_Scenario_:_Default_,_UWAdditionalParams_:{_InOut_:" +
+                "null,_ReturnAddress_:null,_Source_:null},_Lang_:__}";
+        return (jsonPrefix + login + jsonInfix + password + jsonSuffix).replace('_', '"');
     }
 
     private List<BankAccount> getAccountsFromJson(String json) {
@@ -101,45 +78,5 @@ public class MBankScraper implements BankScraper {
         for (int i = 0; i < array.length(); ++i)
             accounts.add(new MBankAccount(array.getJSONObject(i)));
         return accounts;
-    }
-
-    private HttpRequester prepareHttpRequesterForGettingAccountsData() throws IOException {
-        HttpRequester httpRequester = new HttpRequester(MBANK_URL);
-        httpRequester.setupBasicHttpConnection("POST", "/pl/MyDesktop/Desktop/GetAccountsList");
-        httpRequester.setRequestCookie(prepareCookieHttpHeader());
-        httpRequester.setHttpRequestHeader("X-Request-Verification-Token", requestVerificationToken);
-        httpRequester.setHttpRequestHeader("X-Requested-With", "XMLHttpRequest");
-        httpRequester.setHttpRequestHeader("X-Tab-Id", getRawTabIdValue());
-        return httpRequester;
-    }
-
-
-    // returns String containing both cookies formatted for sending as a "Cookie" http header
-    private String prepareCookieHttpHeader() {
-        String cookie = "";
-        if (! "".equals(mBank2Cookie))
-            cookie = cookie + "; " + mBank2Cookie;
-        if (! "".equals(mBank_tabIdCookie))
-            cookie = cookie + "; " + mBank_tabIdCookie;
-        return cookie;
-    }
-
-    private String getRawTabIdValue() {
-        return mBank_tabIdCookie.substring(MBANK_TABID_COOKIE_NAME.length() + 1);
-    }
-
-    private void prepareRequestVerificationToken() throws IOException {
-        HttpRequester httpRequester = new HttpRequester(MBANK_URL);
-        httpRequester.setupBasicHttpConnection("GET", "/pl");
-        httpRequester.setRequestCookie(prepareCookieHttpHeader());
-        String html = httpRequester.receiveHttpResponse();
-        requestVerificationToken = findRequestVerificationTokenInHtml(html);
-    }
-
-    private String findRequestVerificationTokenInHtml(String html) {
-        int endOfToken = html.indexOf("\" name=\"__AjaxRequestVerificationToken\">");
-        String htmlWithoutSuffix = html.substring(0, endOfToken);
-        int lastIndexOfQuotationMark = htmlWithoutSuffix.lastIndexOf('"');
-        return htmlWithoutSuffix.substring(lastIndexOfQuotationMark + 1);
     }
 }
