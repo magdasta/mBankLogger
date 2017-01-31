@@ -30,7 +30,7 @@ public class MBankScraper implements BankScraper {
     public List<BankAccount> getAccounts() throws IOException, SAXException {
         sendCredentials();
         discoverRequestVerificationToken();
-        String accountsJson = getAccountsJson();
+        String accountsJson = fetchAccountsJson();
         return getAccountsFromJson(accountsJson);
     }
 
@@ -54,7 +54,7 @@ public class MBankScraper implements BankScraper {
         requestVerificationToken = response.getElementsWithName("__AjaxRequestVerificationToken")[0].getAttribute("content");
     }
 
-    private String getAccountsJson() throws IOException, SAXException {
+    private String fetchAccountsJson() throws IOException, SAXException {
         WebRequest request = new PostMethodWebRequest(MBANK_URL + "pl/MyDesktop/Desktop/GetAccountsList");
         request.setHeaderField("X-Request-Verification-Token", requestVerificationToken);
         request.setHeaderField("X-Requested-With", "XMLHttpRequest");
@@ -75,8 +75,7 @@ public class MBankScraper implements BankScraper {
         JSONObject jsonObject = new JSONObject(json);
         JSONArray array = jsonObject.getJSONArray("accountDetailsList");
         List<BankAccount> accounts = new ArrayList<>();
-        for (int i = 0; i < array.length(); ++i)
-            accounts.add(new Account(array.getJSONObject(i)));
+        array.forEach(item -> accounts.add(new Account((JSONObject) item)));
         return accounts;
     }
 }
