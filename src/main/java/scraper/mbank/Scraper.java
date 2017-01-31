@@ -10,7 +10,11 @@ import scraper.BankScraper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Scraper implements BankScraper {
     private static String MBANK_URL = "https://online.mbank.pl/";
@@ -69,8 +73,9 @@ public class Scraper implements BankScraper {
     private List<BankAccount> getAccountsFromJson(String json) {
         JSONObject jsonObject = new JSONObject(json);
         JSONArray array = jsonObject.getJSONArray("accountDetailsList");
-        List<BankAccount> accounts = new ArrayList<>();
-        array.forEach(item -> accounts.add(new Account((JSONObject) item)));
-        return accounts;
+        List<JSONObject> l = new ArrayList<>();
+        for (int i = 0; i < array.length(); ++i)
+            l.add(array.getJSONObject(i));
+        return l.stream().map(item -> new Account(item)).collect(Collectors.toList());
     }
 }
