@@ -1,6 +1,6 @@
 package ui;
 
-import account.BankAccount;
+import scraper.BankAccount;
 
 import java.util.List;
 

@@ -4,8 +4,7 @@ import com.meterware.httpunit.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.xml.sax.SAXException;
-import account.BankAccount;
-import account.mbank.Account;
+import scraper.BankAccount;
 import scraper.BankScraper;
 
 import java.io.ByteArrayInputStream;
@@ -13,31 +12,27 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MBankScraper implements BankScraper {
+public class Scraper implements BankScraper {
     private static String MBANK_URL = "https://online.mbank.pl/";
     private String login;
     private String password;
     private String requestVerificationToken;
     private WebConversation webConversation;
 
-    public MBankScraper(String login, String password) {
+    public Scraper(String login, String password) {
         this.login = login;
         this.password = password;
-        setupWebConversation();
+        webConversation = new WebConversation();
+        HttpUnitOptions.setDefaultCharacterSet("UTF-8");
+        HttpUnitOptions.setScriptingEnabled(true);
     }
 
     @Override
-    public List<BankAccount> getAccounts() throws IOException, SAXException {
+    public List<BankAccount> getAccounts() throws SAXException, IOException {
         sendCredentials();
         discoverRequestVerificationToken();
         String accountsJson = fetchAccountsJson();
         return getAccountsFromJson(accountsJson);
-    }
-
-    private void setupWebConversation() {
-        webConversation = new WebConversation();
-        HttpUnitOptions.setDefaultCharacterSet("UTF-8");
-        HttpUnitOptions.setScriptingEnabled(true);
     }
 
     private void sendCredentials() throws IOException, SAXException {
@@ -46,6 +41,14 @@ public class MBankScraper implements BankScraper {
                 "application/json;charset=UTF-8");
         request.setHeaderField("Content-Type", "application/json;charset=UTF-8");
         webConversation.sendRequest(request);
+    }
+
+    private  String prepareLoginData() {
+        String jsonPrefix = "{_UserName_:_";
+        String jsonInfix = "_,_Password_:_";
+        String jsonSuffix = "_,_Seed_:_IuPy73fmyUmjeMYhanpFEw==_,_Scenario_:_Default_,_UWAdditionalParams_:{_InOut_:" +
+                "null,_ReturnAddress_:null,_Source_:null},_Lang_:__}";
+        return (jsonPrefix + login + jsonInfix + password + jsonSuffix).replace('_', '"');
     }
 
     private void discoverRequestVerificationToken() throws SAXException, IOException {
@@ -61,14 +64,6 @@ public class MBankScraper implements BankScraper {
         request.setHeaderField("X-Tab-Id", webConversation.getCookieValue("mBank_tabId"));
         WebResponse response = webConversation.sendRequest(request);
         return response.getText();
-    }
-
-    private  String prepareLoginData() {
-        String jsonPrefix = "{_UserName_:_";
-        String jsonInfix = "_,_Password_:_";
-        String jsonSuffix = "_,_Seed_:_IuPy73fmyUmjeMYhanpFEw==_,_Scenario_:_Default_,_UWAdditionalParams_:{_InOut_:" +
-                "null,_ReturnAddress_:null,_Source_:null},_Lang_:__}";
-        return (jsonPrefix + login + jsonInfix + password + jsonSuffix).replace('_', '"');
     }
 
     private List<BankAccount> getAccountsFromJson(String json) {
